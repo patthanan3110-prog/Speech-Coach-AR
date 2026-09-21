@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Speech Coach AR</title>
+
+<style>
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: linear-gradient(135deg, #ffe4f1, #eee0ff);
+  color: #4b3b52;
+  text-align: center;
+}
+
+.container {
+  max-width: 500px;
+  margin: auto;
+  padding: 20px;
+}
+
+h1 {
+  color: #b85c9e;
+  margin-bottom: 5px;
+}
+
+.subtitle {
+  color: #777;
+  margin-bottom: 20px;
+}
+
+.card {
+  background: white;
+  border-radius: 25px;
+  padding: 20px;
+  margin-bottom: 18px;
+  box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+}
+
+video {
+  width: 100%;
+  border-radius: 20px;
+  background: #222;
+  transform: scaleX(-1);
+}
+
+.audience {
+  font-size: 45px;
+  margin: 10px;
+}
+
+.topic {
+  background: #fff0f7;
+  padding: 15px;
+  border-radius: 15px;
+  margin: 15px 0;
+  font-size: 18px;
+}
+
+.timer {
+  font-size: 40px;
+  font-weight: bold;
+  color: #b85c9e;
+  margin: 10px;
+}
+
+button {
+  border: none;
+  border-radius: 15px;
+  padding: 13px 20px;
+  margin: 5px;
+  font-size: 16px;
+  cursor: pointer;
+  background: #d98bc2;
+  color: white;
+}
+
+button:hover {
+  opacity: 0.85;
+}
+
+#stopBtn {
+  background: #d96c7c;
+}
+
+.result {
+  font-size: 22px;
+  color: #a04d91;
+  font-weight: bold;
+}
+
+.hidden {
+  display: none;
+}
+
+.status {
+  margin-top: 10px;
+  color: #777;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+  <h1>🎤 Speech Coach AR</h1>
+  <div class="subtitle">
+    แอปผู้ช่วยฝึกพูดและการนำเสนอหน้าห้อง
+  </div>
+
+  <div class="card">
+
+    <video id="camera" autoplay playsinline></video>
+
+    <div class="audience">
+      👩🏻‍🎓 👨🏻‍🎓 👩🏻‍🎓
+    </div>
+
+    <div class="topic">
+      หัวข้อการพูด<br>
+      <strong id="topic">แนะนำตัวเอง</strong>
+    </div>
+
+    <button onclick="randomTopic()">
+      🎲 สุ่มหัวข้อ
+    </button>
+
+    <div class="timer" id="timer">
+      01:00
+    </div>
+
+    <button onclick="startPractice()">
+      ▶ เริ่มฝึกพูด
+    </button>
+
+    <button id="stopBtn" onclick="stopPractice()">
+      ■ หยุด
+    </button>
+
+    <div class="status" id="status">
+      กดเริ่มฝึกเพื่อเปิดกล้องและไมโครโฟน
+    </div>
+
+  </div>
+
+  <div class="card hidden" id="resultBox">
+
+    <h2>📊 ผลการฝึก</h2>
+
+    <p class="result">
+      คะแนนการฝึกพูด
+    </p>
+
+    <div id="score" class="result">
+      0 / 100
+    </div>
+
+    <p>
+      เวลาในการพูด:
+      <span id="usedTime">0</span> วินาที
+    </p>
+
+    <button onclick="location.reload()">
+      🔄 ฝึกใหม่
+    </button>
+
+  </div>
+
+</div>
+
+<script>
+
+let stream;
+let timer;
+let timeLeft = 60;
+let startTime = 0;
+
+const topics = [
+  "แนะนำตัวเอง",
+  "งานอดิเรกของฉัน",
+  "อาชีพในฝัน",
+  "เทคโนโลยีที่ฉันชอบ",
+  "โรงเรียนของฉัน",
+  "เพื่อนที่ฉันชอบ",
+  "สถานที่ท่องเที่ยวที่อยากไป",
+  "สิ่งที่อยากพัฒนาตัวเอง"
+];
+
+function randomTopic() {
+
+  const random =
+    topics[Math.floor(Math.random() * topics.length)];
+
+  document.getElementById("topic").innerText = random;
+}
+
+async function openCamera() {
+
+  try {
+
+    stream = await navigator.mediaDevices.getUserMedia({
+      video: true,
+      audio: true
+    });
+
+    document.getElementById("camera").srcObject = stream;
+
+    document.getElementById("status").innerText =
+      "เปิดกล้องและไมโครโฟนแล้ว ✓";
+
+  } catch (error) {
+
+    document.getElementById("status").innerText =
+      "ไม่สามารถเปิดกล้องหรือไมโครโฟนได้ กรุณากดอนุญาต";
+
+    console.log(error);
+  }
+}
+
+async function startPractice() {
+
+  await openCamera();
+
+  timeLeft = 60;
+  startTime = Date.now();
+
+  document.getElementById("resultBox")
+    .classList.add("hidden");
+
+  updateTimer();
+
+  timer = setInterval(() => {
+
+    timeLeft--;
+
+    updateTimer();
+
+    if (timeLeft <= 0) {
+      stopPractice();
+    }
+
+  }, 1000);
+}
+
+function updateTimer() {
+
+  let minutes =
+    Math.floor(timeLeft / 60);
+
+  let seconds =
+    timeLeft % 60;
+
+  document.getElementById("timer").innerText =
+    String(minutes).padStart(2, "0")
+    + ":" +
+    String(seconds).padStart(2, "0");
+}
+
+function stopPractice() {
+
+  clearInterval(timer);
+
+  let used =
+    Math.floor((Date.now() - startTime) / 1000);
+
+  if (used < 0) used = 0;
+
+  document.getElementById("usedTime").innerText =
+    used;
+
+  let score =
+    Math.min(100, 50 + Math.floor(used / 2));
+
+  document.getElementById("score").innerText =
+    score + " / 100";
+
+  document.getElementById("resultBox")
+    .classList.remove("hidden");
+
+  document.getElementById("status").innerText =
+    "ฝึกเสร็จแล้ว ✓";
+
+  if (stream) {
+
+    stream.getTracks().forEach(track => {
+      track.stop();
+    });
+
+  }
+}
+
+</script>
+
+</body>
+</html>
